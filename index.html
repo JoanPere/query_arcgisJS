@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title></title>
+
+    <link rel="stylesheet" href="https://js.arcgis.com/3.16/esri/css/esri.css">
+	<script src="https://js.arcgis.com/3.16/"></script>
+
+	<style>
+	html, body, #mapDiv {
+		padding: 0;
+		margin: 0;
+		height: 100%;}
+	</style>
+
+	<script>
+		var map;
+		var urlDynamic = "http://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer";
+		var urlCities = "http://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer/0";
+
+		require(["esri/map",
+			"esri/geometry/Circle",
+			"esri/layers/ArcGISDynamicMapServiceLayer",
+			"esri/tasks/query",
+			"esri/tasks/QueryTask",
+			"esri/geometry/Polygon",
+			"esri/symbols/PictureMarkerSymbol",
+			"esri/symbols/SimpleFillSymbol", 
+      		"esri/graphic",
+      		"esri/layers/GraphicsLayer",
+      		"esri/Color",
+			"dojo/domReady!"], 
+		function(Map, Circle, ArcGISDynamicMapServiceLayer, Query, QueryTask, Polygon, PictureMarkerSymbol, SimpleFillSymbol, Graphic, GraphicsLayer, Color) {
+		    // code to create the map and add a basemap will go here
+		    map = new Map("mapDiv", {
+		    	center: [-56.049, 38.485],
+		    	zoom: 3,
+		    	basemap: "gray-vector"
+		  	});
+
+
+		    dynamLayer = new ArcGISDynamicMapServiceLayer(urlDynamic,{id:"usa",opacity:0.5});
+        	map.addLayer(dynamLayer);
+
+        	var graphicLayer = new GraphicsLayer();
+        	map.addLayer(graphicLayer);
+
+        	//QUERY
+        	//constructor
+        	var myQuery = new Query();
+        	//criterio por atributos
+        	myQuery.where = "pop2000 > 50000";
+ 			
+			//Atributos de salida
+			myQuery.outFields = ["areaname", "pop2000"];
+			//si queremos que devuelva la geometría
+			myQuery.returnGeometry = true;
+			myQuery.outSpatialReference = map.spatialReference;
+			
+			//QUERYTASK
+				//Creamos la queryTask
+			var myQueryTask = new QueryTask(urlCities);
+						
+			map.on("click",function(evt){
+				//criterio espacial
+        			//creo una geometria
+        		var circle = new Circle({
+           			center: evt.mapPoint,
+            		radius: 100000
+          		});
+        			//añado la geometría a la query
+				myQuery.geometry = circle;
+					//aplico el criterio espacial		
+				myQuery.spatialRelationship = Query.SPATIAL_REL_INTERSECTS;
+				
+				var symbol = new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID, null, new Color([255,0,0,0.2]));
+        		var gr = new Graphic(circle, symbol);
+        		graphicLayer.clear();
+        		graphicLayer.add(gr);
+        		
+				
+				//ejecutamos la query y cuando finalize la consulta lanzamos la función show
+				myQueryTask.execute(myQuery,show);
+
+			});
+			function show(fsResult){
+				var features = fsResult.features;
+				map.graphics.clear();
+				if(features.length!=0){
+					var ptPicSymbol = new PictureMarkerSymbol("https://static.arcgis.com/images/Symbols/Shapes/BluePin1LargeB.png", 50, 50);				
+					for (var i = 0; i<features.length; i++){
+						features[i].symbol = ptPicSymbol;
+						map.graphics.add(features[i]);
+					}
+				} else {
+					alert("no se ha encontrado ninguna entidad que cumpla las condiciones")
+				}
+
+			};
+	  	});
+	</script>
+	</head>
+	<body class="claro">
+  		<div id="mapDiv"></div>
+  	</body>
+</html>
