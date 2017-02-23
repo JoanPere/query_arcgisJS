@@ -37,7 +37,7 @@
 		    map = new Map("mapDiv", {
 		    	center: [-56.049, 38.485],
 		    	zoom: 3,
-		    	basemap: "gray-vector"
+		    	basemap: "gray"
 		  	});
 
 
@@ -68,7 +68,7 @@
 			//creo una geometria
 		var circle = new Circle({
 			center: evt.mapPoint,
-		radius: 100000
+			radius: 100000
 		});
 		//añado la geometría a la query
 		myQuery.geometry = circle;
